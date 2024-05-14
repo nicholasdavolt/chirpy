@@ -19,9 +19,9 @@ func main() {
 	}
 
 	mux.Handle("/app/*", http.StripPrefix("/app", apiCFG.middlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))
-	mux.HandleFunc("/healthz", handlerReadiness)
-	mux.HandleFunc("/metrics", apiCFG.handlerHits)
-	mux.HandleFunc("/reset", apiCFG.handlerMetricReset)
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("GET /api/metrics", apiCFG.handlerHits)
+	mux.HandleFunc("/api/reset", apiCFG.handlerMetricReset)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(srv.ListenAndServe())
