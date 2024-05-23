@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -45,7 +46,32 @@ func (cfg *apiConfig) handlerChirpReceive(w http.ResponseWriter, r *http.Request
 	respondWithJSON(w, http.StatusCreated, chirp)
 }
 
-func (cfg *apiConfig) handlerChirpGet(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.DB.GetChirps()
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not retrieve Chirps")
+	}
+
+	path := r.PathValue("id")
+
+	id, err := strconv.Atoi(path)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not parse Id")
+	}
+
+	for _, chirp := range dbChirps {
+		if chirp.Id == id {
+			respondWithJSON(w, http.StatusOK, chirp)
+			return
+		}
+	}
+
+	respondWithError(w, http.StatusNotFound, "Could not find Id")
+
+}
+func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	dbChirps, err := cfg.DB.GetChirps()
 
 	if err != nil {

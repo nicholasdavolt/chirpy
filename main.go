@@ -38,7 +38,8 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", apiCFG.handlerHits)
 	mux.HandleFunc("GET /api/reset", apiCFG.handlerMetricReset)
 	mux.HandleFunc("POST /api/chirps", apiCFG.handlerChirpReceive)
-	mux.HandleFunc("GET /api/chirps", apiCFG.handlerChirpGet)
+	mux.HandleFunc("GET /api/chirps", apiCFG.handlerGetChirps)
+	mux.HandleFunc("GET /api/chirps/{id}", apiCFG.handlerGetChirp)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(srv.ListenAndServe())
