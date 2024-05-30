@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCFG.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", apiCFG.handlerGetChirp)
 	mux.HandleFunc("POST /api/users", apiCFG.handlerUserCreate)
+	mux.HandleFunc("POST /api/login", apiCFG.handlerLoginPost)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(srv.ListenAndServe())

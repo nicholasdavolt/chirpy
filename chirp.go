@@ -14,35 +14,6 @@ type Chirp struct {
 	Body string `json:"body"`
 }
 
-type User struct {
-	Id    int    `json:"id"`
-	Email string `json:"email"`
-}
-
-func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) {
-	type inputs struct {
-		Email string `json:"email"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	input := inputs{}
-	err := decoder.Decode(&input)
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't decode input")
-		return
-	}
-
-	user, err := cfg.DB.CreateUser(input.Email)
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Could not Create User")
-		return
-	}
-
-	respondWithJSON(w, http.StatusCreated, user)
-}
-
 func (cfg *apiConfig) handlerChirpReceive(w http.ResponseWriter, r *http.Request) {
 	type inputs struct {
 		Body string `json:"body"`
