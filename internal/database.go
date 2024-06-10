@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -56,8 +57,8 @@ func (db *DB) CreateUser(email string, password []byte) (User, error) {
 	}
 
 	for _, dbUser := range dbStructure.Users {
-		if string(dbUser.Password) == string(user.Password) {
-			return User{}, err
+		if string(dbUser.Email) == string(user.Email) {
+			return User{}, errors.New("User Already Exists")
 		}
 	}
 
@@ -70,6 +71,37 @@ func (db *DB) CreateUser(email string, password []byte) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (db *DB) UpdateUser(idString, email string, password []byte) (User, error) {
+	dbStructure, err := db.loadDB()
+
+	if err != nil {
+		return User{}, err
+	}
+
+	id, err := strconv.ParseInt(idString, 10, 0)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	user := User{
+		Id:       int(id),
+		Email:    email,
+		Password: password,
+	}
+
+	dbStructure.Users[int(id)] = user
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+
 }
 
 func (db *DB) GetUsers() ([]User, error) {

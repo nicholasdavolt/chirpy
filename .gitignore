@@ -22,3 +22,4 @@ go.work
 
 # System Created DB file
 database.json
+.env

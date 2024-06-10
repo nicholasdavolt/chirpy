@@ -3,16 +3,23 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/joho/godotenv"
 	database "github.com/nicholasdavolt/chirpy/internal"
 )
 
 type apiConfig struct {
-	fileserverHits int
-	DB             *database.DB
+	fileserverHits    int
+	DB                *database.DB
+	JwtSecret         string
+	DefaultExpiration int
 }
 
 func main() {
+
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
 	const filepathRoot = "."
 	const port = "8080"
 
@@ -24,8 +31,10 @@ func main() {
 
 	mux := http.NewServeMux()
 	apiCFG := apiConfig{
-		fileserverHits: 0,
-		DB:             db,
+		fileserverHits:    0,
+		DB:                db,
+		JwtSecret:         jwtSecret,
+		DefaultExpiration: 86400,
 	}
 
 	srv := &http.Server{
@@ -41,6 +50,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCFG.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", apiCFG.handlerGetChirp)
 	mux.HandleFunc("POST /api/users", apiCFG.handlerUserCreate)
+	mux.HandleFunc("PUT /api/users", apiCFG.handlerUserPut)
 	mux.HandleFunc("POST /api/login", apiCFG.handlerLoginPost)
 
 	log.Printf("Serving on port: %s\n", port)
