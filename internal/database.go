@@ -14,8 +14,9 @@ type DB struct {
 }
 
 type DBStructure struct {
-	Chirps map[int]Chirp `json:"chirps"`
-	Users  map[int]User  `json:"users"`
+	Chirps        map[int]Chirp        `json:"chirps"`
+	Users         map[int]User         `json:"users"`
+	RefreshTokens map[int]RefreshToken `json:"refreshTokens"`
 }
 
 type Chirp struct {
@@ -27,6 +28,12 @@ type User struct {
 	Id       int    `json:"id"`
 	Email    string `json:"email"`
 	Password []byte `json:"password"`
+}
+
+type RefreshToken struct {
+	UserId      int    `json:"userId"`
+	TokenString string `json:"tokenString"`
+	Expiration  string `json:"expiration"`
 }
 
 func NewDB(path string) (*DB, error) {
@@ -71,6 +78,33 @@ func (db *DB) CreateUser(email string, password []byte) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (db *DB) WriteRefreshToken(refreshTokenString, expiration string, id int) error {
+	dbStructure, err := db.loadDB()
+
+	if err != nil {
+		return err
+	}
+
+	dbId := len(dbStructure.RefreshTokens) + 1
+
+	refreshToken := RefreshToken{
+		UserId:      id,
+		TokenString: refreshTokenString,
+		Expiration:  expiration,
+	}
+
+	dbStructure.RefreshTokens[dbId] = refreshToken
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (db *DB) UpdateUser(idString, email string, password []byte) (User, error) {
@@ -118,6 +152,56 @@ func (db *DB) GetUsers() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (db *DB) GetRefreshTokens() ([]RefreshToken, error) {
+	dbStructure, err := db.loadDB()
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokens := make([]RefreshToken, 0, len(dbStructure.RefreshTokens))
+
+	for _, token := range dbStructure.RefreshTokens {
+		tokens = append(tokens, token)
+	}
+
+	return tokens, nil
+}
+
+func (db *DB) RevokeRefreshToken(tokenString string) error {
+	dbStructure, err := db.loadDB()
+
+	if err != nil {
+		return err
+	}
+
+	id := 0
+
+	for i, dbToken := range dbStructure.RefreshTokens {
+
+		if dbToken.TokenString == tokenString {
+			id = i
+		}
+	}
+
+	token := RefreshToken{
+		UserId:      0,
+		Expiration:  "",
+		TokenString: "",
+	}
+
+	dbStructure.RefreshTokens[id] = token
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (db *DB) CreateChirp(body string) (Chirp, error) {
@@ -197,8 +281,9 @@ func (db *DB) ensureDB() error {
 
 func (db *DB) createDB() error {
 	dbStructure := DBStructure{
-		Chirps: map[int]Chirp{},
-		Users:  map[int]User{},
+		Chirps:        map[int]Chirp{},
+		Users:         map[int]User{},
+		RefreshTokens: map[int]RefreshToken{},
 	}
 	return db.writeDB(dbStructure)
 }

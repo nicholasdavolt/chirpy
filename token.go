@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -22,6 +24,25 @@ func (cfg *apiConfig) CreateToken(expires int, id int) (string, error) {
 	tokenString, err := token.SignedString([]byte(cfg.JwtSecret))
 
 	return tokenString, err
+
+}
+
+func (cfg *apiConfig) CreateRefreshToken(id int) (string, error) {
+	byteAmount := 32
+	randomBytes := make([]byte, byteAmount)
+	_, err := rand.Read(randomBytes)
+
+	if err != nil {
+		return "", err
+	}
+
+	tokenString := hex.EncodeToString(randomBytes)
+
+	expiration := time.Now().Add(time.Duration(cfg.RefreshExpiration) * time.Second).UTC()
+
+	cfg.DB.WriteRefreshToken(tokenString, expiration.Format("2006-01-02"), id)
+
+	return tokenString, nil
 
 }
 

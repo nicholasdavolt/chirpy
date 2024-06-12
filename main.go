@@ -14,6 +14,7 @@ type apiConfig struct {
 	DB                *database.DB
 	JwtSecret         string
 	DefaultExpiration int
+	RefreshExpiration int
 }
 
 func main() {
@@ -34,7 +35,8 @@ func main() {
 		fileserverHits:    0,
 		DB:                db,
 		JwtSecret:         jwtSecret,
-		DefaultExpiration: 86400,
+		DefaultExpiration: 3600,
+		RefreshExpiration: 5184000,
 	}
 
 	srv := &http.Server{
@@ -46,6 +48,8 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /admin/metrics", apiCFG.handlerHits)
 	mux.HandleFunc("GET /api/reset", apiCFG.handlerMetricReset)
+	mux.HandleFunc("POST /api/refresh", apiCFG.handlerTokenRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCFG.handlerTokenRevoke)
 	mux.HandleFunc("POST /api/chirps", apiCFG.handlerChirpReceive)
 	mux.HandleFunc("GET /api/chirps", apiCFG.handlerGetChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", apiCFG.handlerGetChirp)
