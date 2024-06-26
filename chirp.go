@@ -10,8 +10,9 @@ import (
 )
 
 type Chirp struct {
-	Id   int    `json:"id"`
-	Body string `json:"body"`
+	Id        int    `json:"id"`
+	Body      string `json:"body"`
+	Author_Id int    `json:"author_id"`
 }
 
 func (cfg *apiConfig) handlerChirpReceive(w http.ResponseWriter, r *http.Request) {
@@ -19,9 +20,27 @@ func (cfg *apiConfig) handlerChirpReceive(w http.ResponseWriter, r *http.Request
 		Body string `json:"body"`
 	}
 
+	authHeader := r.Header.Get("Authorization")
+
+	splitHeader := strings.Split(authHeader, " ")
+
+	token := splitHeader[1]
+
+	userIdString, err := cfg.validateToken(token)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+	}
+
+	author_id, err := strconv.Atoi(userIdString)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	input := inputs{}
-	err := decoder.Decode(&input)
+	err = decoder.Decode(&input)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode input")
@@ -36,7 +55,7 @@ func (cfg *apiConfig) handlerChirpReceive(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	chirp, err := cfg.DB.CreateChirp(cleaned)
+	chirp, err := cfg.DB.CreateChirp(cleaned, author_id)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not Create Chirp")
@@ -82,8 +101,9 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 
 	for _, chirp := range dbChirps {
 		chirps = append(chirps, Chirp{
-			Id:   chirp.Id,
-			Body: chirp.Body,
+			Id:        chirp.Id,
+			Body:      chirp.Body,
+			Author_Id: chirp.Author_Id,
 		})
 	}
 
