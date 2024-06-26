@@ -205,6 +205,40 @@ func (db *DB) RevokeRefreshToken(tokenString string) error {
 
 }
 
+func (db *DB) DeleteChirp(chirpId int) error {
+	dbStructure, err := db.loadDB()
+
+	if err != nil {
+		return err
+	}
+
+	id := 0
+
+	for i, chirp := range dbStructure.Chirps {
+
+		if chirp.Id == chirpId {
+			id = i
+		}
+	}
+
+	chirp := Chirp{
+		Id:        0,
+		Body:      "",
+		Author_Id: 0,
+	}
+
+	dbStructure.Chirps[id] = chirp
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		return errors.New("could not update db")
+	}
+
+	return nil
+
+}
+
 func (db *DB) CreateChirp(body string, userID int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 

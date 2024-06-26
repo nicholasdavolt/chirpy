@@ -90,6 +90,58 @@ func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	respondWithError(w, http.StatusNotFound, "Could not find Id")
 
 }
+
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+
+	authHeader := r.Header.Get("Authorization")
+
+	splitHeader := strings.Split(authHeader, " ")
+
+	token := splitHeader[1]
+
+	userIdString, err := cfg.validateToken(token)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+	}
+
+	author_id, err := strconv.Atoi(userIdString)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not parse Author")
+	}
+
+	dbChirps, err := cfg.DB.GetChirps()
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not retrieve Chirps")
+	}
+
+	path := r.PathValue("id")
+
+	id, err := strconv.Atoi(path)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not parse Id")
+	}
+
+	for _, chirp := range dbChirps {
+		if chirp.Id == id {
+			if chirp.Author_Id != author_id {
+				respondWithError(w, http.StatusForbidden, "User does not own Chirp, did not delete")
+			}
+
+			err := cfg.DB.DeleteChirp(id)
+
+			if err != nil {
+				respondWithError(w, http.StatusInternalServerError, "Deletion Failed")
+			}
+
+		}
+	}
+
+	respondWithJSON(w, http.StatusNoContent, "")
+
+}
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 	dbChirps, err := cfg.DB.GetChirps()
 
