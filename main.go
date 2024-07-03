@@ -57,6 +57,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", apiCFG.handlerUserCreate)
 	mux.HandleFunc("PUT /api/users", apiCFG.handlerUserPut)
 	mux.HandleFunc("POST /api/login", apiCFG.handlerLoginPost)
+	mux.HandleFunc("POST /api/polka/webhooks", apiCFG.handlerPolkaPost)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(srv.ListenAndServe())

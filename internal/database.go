@@ -26,9 +26,10 @@ type Chirp struct {
 }
 
 type User struct {
-	Id       int    `json:"id"`
-	Email    string `json:"email"`
-	Password []byte `json:"password"`
+	Id            int    `json:"id"`
+	Email         string `json:"email"`
+	Password      []byte `json:"password"`
+	Is_Chirpy_Red bool   `json:"is_chirpy_red"`
 }
 
 type RefreshToken struct {
@@ -59,9 +60,10 @@ func (db *DB) CreateUser(email string, password []byte) (User, error) {
 	id := len(dbStructure.Users) + 1
 
 	user := User{
-		Id:       id,
-		Email:    email,
-		Password: password,
+		Id:            id,
+		Email:         email,
+		Password:      password,
+		Is_Chirpy_Red: false,
 	}
 
 	for _, dbUser := range dbStructure.Users {
@@ -122,9 +124,10 @@ func (db *DB) UpdateUser(idString, email string, password []byte) (User, error) 
 	}
 
 	user := User{
-		Id:       int(id),
-		Email:    email,
-		Password: password,
+		Id:            int(id),
+		Email:         email,
+		Password:      password,
+		Is_Chirpy_Red: dbStructure.Users[int(id)].Is_Chirpy_Red,
 	}
 
 	dbStructure.Users[int(id)] = user
@@ -136,6 +139,44 @@ func (db *DB) UpdateUser(idString, email string, password []byte) (User, error) 
 	}
 
 	return user, nil
+
+}
+
+func (db *DB) UpdateChirpyRed(id int) error {
+	dbStructure, err := db.loadDB()
+
+	if err != nil {
+		return err
+	}
+
+	_, ok := dbStructure.Users[id]
+
+	if ok {
+		for _, user := range dbStructure.Users {
+			if user.Id == id {
+				newUser := User{
+					Id:            user.Id,
+					Email:         user.Email,
+					Password:      user.Password,
+					Is_Chirpy_Red: true,
+				}
+
+				dbStructure.Users[user.Id] = newUser
+			}
+
+		}
+
+	} else {
+		return errors.New("user not found")
+	}
+
+	err = db.writeDB(dbStructure)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 

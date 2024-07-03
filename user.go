@@ -13,13 +13,15 @@ import (
 type UserLogin struct {
 	Id            int    `json:"id"`
 	Email         string `json:"email"`
+	Is_Chirpy_Red bool   `json:"is_chirpy_red"`
 	Token         string `json:"token"`
 	Refresh_Token string `json:"refresh_token"`
 }
 
 type User struct {
-	Id    int    `json:"id"`
-	Email string `json:"email"`
+	Id            int    `json:"id"`
+	Email         string `json:"email"`
+	Is_Chirpy_Red bool   `json:"is_chirpy_red"`
 }
 
 type ReturnToken struct {
@@ -54,7 +56,7 @@ func (cfg *apiConfig) handlerUserCreate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, User{user.Id, user.Email})
+	respondWithJSON(w, http.StatusCreated, user)
 }
 
 func (cfg *apiConfig) handlerLoginPost(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +84,7 @@ func (cfg *apiConfig) handlerLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	id := 0
 	email := ""
+	is_chirpy_red := false
 	expiresInSeconds := 0
 
 	for _, dbUser := range dbUsers {
@@ -95,6 +98,7 @@ func (cfg *apiConfig) handlerLoginPost(w http.ResponseWriter, r *http.Request) {
 
 			id = dbUser.Id
 			email = dbUser.Email
+			is_chirpy_red = dbUser.Is_Chirpy_Red
 		}
 	}
 
@@ -113,7 +117,7 @@ func (cfg *apiConfig) handlerLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, UserLogin{id, email, tokenString, refreshTokenString})
+	respondWithJSON(w, http.StatusOK, UserLogin{id, email, is_chirpy_red, tokenString, refreshTokenString})
 
 }
 
@@ -228,5 +232,44 @@ func (cfg *apiConfig) handlerUserPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, User{user.Id, user.Email})
+	respondWithJSON(w, http.StatusOK, user)
+}
+
+func (cfg *apiConfig) handlerPolkaPost(w http.ResponseWriter, r *http.Request) {
+	type inputs struct {
+		Event string `json:"event"`
+		Data  struct {
+			User_id int `json:"user_id"`
+		} `json:"data"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	input := inputs{}
+	err := decoder.Decode(&input)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Couldn't decode input: %v", err))
+		return
+	}
+
+	if input.Event != "user.upgraded" {
+		respondWithJSON(w, http.StatusNoContent, "")
+		return
+	}
+
+	err = cfg.DB.UpdateChirpyRed(input.Data.User_id)
+
+	if err != nil {
+		if err.Error() == "user not found" {
+			respondWithError(w, http.StatusNotFound, err.Error())
+
+		} else {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+
+		return
+	}
+
+	respondWithJSON(w, http.StatusNoContent, "")
+
 }
