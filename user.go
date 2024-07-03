@@ -243,6 +243,20 @@ func (cfg *apiConfig) handlerPolkaPost(w http.ResponseWriter, r *http.Request) {
 		} `json:"data"`
 	}
 
+	authHeader := r.Header.Get("Authorization")
+
+	key := ""
+
+	if authHeader != "" {
+		splitHeader := strings.Split(authHeader, " ")
+		key = splitHeader[1]
+	}
+
+	if key != cfg.Polka_Key {
+		respondWithError(w, http.StatusUnauthorized, "")
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	input := inputs{}
 	err := decoder.Decode(&input)

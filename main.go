@@ -15,12 +15,14 @@ type apiConfig struct {
 	JwtSecret         string
 	DefaultExpiration int
 	RefreshExpiration int
+	Polka_Key         string
 }
 
 func main() {
 
 	godotenv.Load()
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 	const filepathRoot = "."
 	const port = "8080"
 
@@ -37,6 +39,7 @@ func main() {
 		JwtSecret:         jwtSecret,
 		DefaultExpiration: 3600,
 		RefreshExpiration: 5184000,
+		Polka_Key:         polkaKey,
 	}
 
 	srv := &http.Server{
@@ -60,6 +63,7 @@ func main() {
 	mux.HandleFunc("POST /api/polka/webhooks", apiCFG.handlerPolkaPost)
 
 	log.Printf("Serving on port: %s\n", port)
+
 	log.Fatal(srv.ListenAndServe())
 
 }
