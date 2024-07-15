@@ -143,6 +143,10 @@ func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request)
 
 }
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
+
+	authorIdString := r.URL.Query().Get("author_id")
+	sortDirection := r.URL.Query().Get("sort")
+
 	dbChirps, err := cfg.DB.GetChirps()
 
 	if err != nil {
@@ -151,17 +155,36 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 
 	chirps := []Chirp{}
 
-	for _, chirp := range dbChirps {
-		chirps = append(chirps, Chirp{
-			Id:        chirp.Id,
-			Body:      chirp.Body,
-			Author_Id: chirp.Author_Id,
-		})
+	if authorIdString == "" {
+		for _, chirp := range dbChirps {
+			chirps = append(chirps, Chirp{
+				Id:        chirp.Id,
+				Body:      chirp.Body,
+				Author_Id: chirp.Author_Id,
+			})
+		}
+	} else {
+		for _, chirp := range dbChirps {
+			if strconv.Itoa(chirp.Author_Id) == authorIdString {
+				chirps = append(chirps, Chirp{
+					Id:        chirp.Id,
+					Body:      chirp.Body,
+					Author_Id: chirp.Author_Id,
+				})
+
+			}
+		}
 	}
 
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].Id < chirps[j].Id
-	})
+	if sortDirection == "asc" || sortDirection == "" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].Id < chirps[j].Id
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].Id > chirps[j].Id
+		})
+	}
 
 	respondWithJSON(w, http.StatusOK, chirps)
 }
